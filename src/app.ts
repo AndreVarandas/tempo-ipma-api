@@ -1,8 +1,10 @@
 import express from 'express';
 import cors from 'cors';
+import swaggerUi from 'swagger-ui-express';
 import { weatherRoutes } from './routes/weatherRoutes';
 import { errorHandler, notFoundHandler } from './middleware/errorHandler';
 import { logger } from './utils/logger';
+import { swaggerSpec } from './config/swaggerSimple';
 
 export const createApp = (): express.Application => {
   const app = express();
@@ -19,6 +21,15 @@ export const createApp = (): express.Application => {
       userAgent: req.get('User-Agent'),
     });
     next();
+  });
+
+  // API Documentation
+  app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerSpec));
+  
+  // Swagger JSON endpoint
+  app.get('/api-docs.json', (_req, res) => {
+    res.setHeader('Content-Type', 'application/json');
+    res.send(swaggerSpec);
   });
 
   // Routes

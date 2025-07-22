@@ -1,0 +1,7 @@
+# Override file for single instance deployment
+# This file is automatically used by docker-compose
+services:
+  ipma-api:
+    container_name: ipma-api-wrapper  # Use fixed name for single instance
+    ports:
+      - "3000:3000"  # Bind to host port for single instance

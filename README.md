@@ -39,11 +39,26 @@ src/
 
 ## Installation
 
+### Local Development
+
 ```bash
 npm install
 ```
 
+### Docker
+
+```bash
+# Build and run with Docker Compose (recommended)
+docker-compose up --build
+
+# Or build manually
+docker build -t ipma-api-wrapper .
+docker run -p 3000:3000 ipma-api-wrapper
+```
+
 ## Development
+
+### Local Development
 
 ```bash
 # Development with hot reload
@@ -68,25 +83,66 @@ npm run format:check
 npm run format:lint  # Format and lint in one command
 ```
 
-## API Endpoints
+### Docker Development
 
-### Core Endpoints
+```bash
+# Run production version
+docker-compose up
+
+# Run development version with hot reload
+docker-compose --profile dev up
+
+# Run development version only
+docker-compose up ipma-api-dev
+
+# Build without cache
+docker-compose build --no-cache
+
+# View logs
+docker-compose logs -f
+
+# Stop services
+docker-compose down
+
+# Stop and remove volumes
+docker-compose down -v
+```
+
+## API Documentation
+
+### Interactive Documentation
+
+#### Production Environment
+
+- **Swagger UI**: [http://localhost:3000/api-docs](http://localhost:3000/api-docs) - Interactive API documentation
+- **OpenAPI JSON**: [http://localhost:3000/api-docs.json](http://localhost:3000/api-docs.json) - Raw OpenAPI specification
+
+#### Development Environment
+
+- **Swagger UI**: [http://localhost:3001/api-docs](http://localhost:3001/api-docs) - Interactive API documentation (dev server)
+- **OpenAPI JSON**: [http://localhost:3001/api-docs.json](http://localhost:3001/api-docs.json) - Raw OpenAPI specification (dev server)
+
+> 💡 **Tip**: The Swagger UI provides an interactive interface where you can test all API endpoints directly from your browser. Simply navigate to the Swagger UI URL and explore the available endpoints, view request/response schemas, and execute API calls with real data.
+
+### API Endpoints
+
+#### Core Endpoints
 
 - `GET /health` - Health check
-- `GET /locations` - All available districts and islands
+- `GET /locations` - All available districts and islands  
 - `GET /weather-types` - Weather type classifications
 
-### Forecast Endpoints
+#### Forecast Endpoints
 
 - `GET /forecast/current` - Current day forecast for all locations
 - `GET /forecast/daily` - Same as /forecast/current
 - `GET /forecast/daily/:locationId` - Forecast for specific location
 
-### Utility Endpoints
+#### Utility Endpoints
 
 - `DELETE /cache` - Clear service cache
 
-### API Versioning
+#### API Versioning
 
 All endpoints are also available under `/api/v1/` prefix:
 
@@ -134,6 +190,48 @@ NODE_ENV=development
 LOG_LEVEL=info
 ```
 
+## Docker Deployment
+
+### Container Features
+
+- 🐳 **Multi-stage build**: Optimized production image size
+- 🔒 **Security**: Non-root user execution
+- 🏥 **Health checks**: Built-in application health monitoring
+- 📊 **Logging**: Persistent log volumes
+- 🔄 **Hot reload**: Development container support
+
+### Production Deployment
+
+```bash
+# Single instance (uses docker-compose.override.yml automatically)
+docker-compose up -d
+
+# Multiple instances (scaling) - Use base config without override
+docker-compose -f docker-compose.yml up -d --scale ipma-api=3
+
+# Multiple instances with load balancer (recommended for production)
+docker-compose -f docker-compose.scale.yml --profile scale up -d --scale ipma-api=3
+
+# Access scaled instances (accessible via container network)
+docker exec -it tempo-ipma-api-1 curl localhost:3000/health
+docker exec -it tempo-ipma-api-2 curl localhost:3000/health
+
+# Access via load balancer (when using scale configuration)
+curl http://localhost:8080/health
+
+# Monitor health
+docker-compose ps
+```
+
+### Environment Variables for Docker
+
+```bash
+# docker-compose.yml or .env file
+NODE_ENV=production
+PORT=3000
+LOG_LEVEL=info
+```
+
 ## Architecture Decisions
 
 - **TypeScript**: Full type safety and better developer experience
@@ -143,3 +241,4 @@ LOG_LEVEL=info
 - **Logging**: Structured logging with Winston
 - **Validation**: Request validation middleware for type safety
 - **Graceful Shutdown**: Proper cleanup on SIGTERM/SIGINT signals
+- **Docker**: Containerized deployment with multi-stage builds

@@ -1,0 +1,49 @@
+services:
+  ipma-api:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    # No container_name to support scaling
+    expose:
+      - "3000"  # Expose port but don't bind to host (for scaling)
+    environment:
+      - NODE_ENV=production
+      - PORT=3000
+      - LOG_LEVEL=info
+    volumes:
+      # Mount logs directory for persistence
+      - ./logs:/app/logs
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "node", "-e", "require('http').get('http://localhost:3000/health', (res) => { process.exit(res.statusCode === 200 ? 0 : 1) })"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+
+  # Development version with hot reload
+  ipma-api-dev:
+    build:
+      context: .
+      dockerfile: Dockerfile.dev
+    container_name: ipma-api-wrapper-dev
+    ports:
+      - "3001:3000"
+    environment:
+      - NODE_ENV=development
+      - PORT=3000
+      - LOG_LEVEL=debug
+    volumes:
+      - .:/app
+      - dev_node_modules:/app/node_modules
+      - ./logs:/app/logs
+    restart: unless-stopped
+    profiles:
+      - dev
+
+volumes:
+  dev_node_modules:
+
+networks:
+  default:
+    name: ipma-network

@@ -15,7 +15,7 @@ export class AppError extends Error {
   }
 }
 
-export const errorHandler = (error: Error | AppError, _req: Request, res: Response): void => {
+export const errorHandler = (error: Error | AppError, _req: Request, res: Response, _next: NextFunction): void => {
   let statusCode = 500;
   let message = 'Internal server error';
 
