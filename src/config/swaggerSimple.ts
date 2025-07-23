@@ -124,85 +124,34 @@ export const getSwaggerSpec = (req?: Request): Record<string, unknown> => ({
         },
       },
     },
-    '/forecast/current': {
+    '/forecast': {
       get: {
         tags: ['Forecasts'],
-        summary: 'Get current day forecast for all locations',
-        responses: {
-          200: {
-            description: 'Current forecast data for all Portuguese locations',
-            content: {
-              'application/json': {
-                schema: {
-                  allOf: [
-                    { $ref: '#/components/schemas/APIResponse' },
-                    {
-                      type: 'object',
-                      properties: {
-                        data: {
-                          type: 'array',
-                          items: { $ref: '#/components/schemas/ForecastData' },
-                        },
-                        count: { type: 'integer', example: 27 },
-                        metadata: { $ref: '#/components/schemas/ForecastMetadata' },
-                      },
-                    },
-                  ],
-                },
-              },
-            },
-          },
-          500: { $ref: '#/components/responses/InternalServerError' },
-        },
-      },
-    },
-    '/forecast/daily': {
-      get: {
-        tags: ['Forecasts'],
-        summary: 'Get current day forecast for all locations (alias)',
-        responses: {
-          200: {
-            description: 'Same as /forecast/current',
-            content: {
-              'application/json': {
-                schema: {
-                  allOf: [
-                    { $ref: '#/components/schemas/APIResponse' },
-                    {
-                      type: 'object',
-                      properties: {
-                        data: {
-                          type: 'array',
-                          items: { $ref: '#/components/schemas/ForecastData' },
-                        },
-                      },
-                    },
-                  ],
-                },
-              },
-            },
-          },
-          500: { $ref: '#/components/responses/InternalServerError' },
-        },
-      },
-    },
-    '/forecast/daily/{locationId}': {
-      get: {
-        tags: ['Forecasts'],
-        summary: 'Get forecast for a specific location',
+        summary: 'Get weather forecast data',
+        description:
+          'Get forecast for all locations or a specific location, with optional day parameter',
         parameters: [
           {
-            in: 'path',
-            name: 'locationId',
-            required: true,
-            description: 'Global location identifier',
+            in: 'query',
+            name: 'location',
+            required: false,
+            description:
+              'Global location identifier. If not provided, returns data for all locations',
             schema: { type: 'integer', minimum: 1 },
             example: 1010500,
+          },
+          {
+            in: 'query',
+            name: 'day',
+            required: false,
+            description: 'Forecast day (0=today, 1=tomorrow, 2=day after tomorrow)',
+            schema: { type: 'integer', minimum: 0, maximum: 2 },
+            example: 0,
           },
         ],
         responses: {
           200: {
-            description: 'Forecast data for the specified location',
+            description: 'Forecast data',
             content: {
               'application/json': {
                 schema: {
@@ -211,8 +160,25 @@ export const getSwaggerSpec = (req?: Request): Record<string, unknown> => ({
                     {
                       type: 'object',
                       properties: {
-                        data: { $ref: '#/components/schemas/ForecastData' },
-                        count: { type: 'integer', example: 1 },
+                        data: {
+                          oneOf: [
+                            {
+                              type: 'array',
+                              items: { $ref: '#/components/schemas/ForecastData' },
+                              description: 'Array of forecast data for all locations',
+                            },
+                            {
+                              $ref: '#/components/schemas/ForecastData',
+                              description: 'Single forecast data for specific location',
+                            },
+                          ],
+                        },
+                        count: {
+                          type: 'integer',
+                          description:
+                            'Number of items returned (27 for all locations, 1 for specific location)',
+                        },
+                        metadata: { $ref: '#/components/schemas/ForecastMetadata' },
                       },
                     },
                   ],

@@ -64,14 +64,33 @@ class IPMAService {
     );
   }
 
+  async getForecastByDay(day: number): Promise<IPMAForecastResponse> {
+    if (day < 0 || day > 2) {
+      throw new Error('Day must be between 0 and 2');
+    }
+    logger.info(`Fetching day ${day} forecast data from IPMA`);
+    return await this.fetchData<IPMAForecastResponse>(
+      `/forecast/meteorology/cities/daily/hp-daily-forecast-day${day}.json`
+    );
+  }
+
   async getEnhancedCurrentForecast(): Promise<{
     metadata: IPMAForecastResponse['owner'] extends string
       ? Pick<IPMAForecastResponse, 'owner' | 'country' | 'forecastDate' | 'dataUpdate'>
       : never;
     data: EnhancedForecastData[];
   }> {
+    return this.getEnhancedForecastByDay(0);
+  }
+
+  async getEnhancedForecastByDay(day: number): Promise<{
+    metadata: IPMAForecastResponse['owner'] extends string
+      ? Pick<IPMAForecastResponse, 'owner' | 'country' | 'forecastDate' | 'dataUpdate'>
+      : never;
+    data: EnhancedForecastData[];
+  }> {
     const [forecastResponse, locations] = await Promise.all([
-      this.getCurrentForecast(),
+      this.getForecastByDay(day),
       this.getLocations(),
     ]);
 
@@ -95,8 +114,11 @@ class IPMAService {
     };
   }
 
-  async getForecastByLocation(locationId: number): Promise<EnhancedForecastData | null> {
-    const enhanced = await this.getEnhancedCurrentForecast();
+  async getForecastByLocation(
+    locationId: number,
+    day: number = 0
+  ): Promise<EnhancedForecastData | null> {
+    const enhanced = await this.getEnhancedForecastByDay(day);
     const forecast = enhanced.data.find(f => f.globalIdLocal === locationId);
     return forecast || null;
   }

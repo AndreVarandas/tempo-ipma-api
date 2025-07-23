@@ -3,11 +3,9 @@ import {
   healthCheck,
   getLocations,
   getWeatherTypes,
-  getCurrentForecast,
-  getForecastByLocation,
+  getForecast,
   clearCache,
 } from '../controllers/weatherController';
-import { validateLocationId } from '../middleware/validation';
 
 const router = Router();
 
@@ -18,10 +16,8 @@ router.get('/health', healthCheck);
 router.get('/locations', getLocations);
 router.get('/weather-types', getWeatherTypes);
 
-// Forecast endpoints
-router.get('/forecast/current', getCurrentForecast);
-router.get('/forecast/daily', getCurrentForecast);
-router.get('/forecast/daily/:locationId', validateLocationId, getForecastByLocation);
+// Unified forecast endpoint
+router.get('/forecast', getForecast);
 
 // Cache management
 router.delete('/cache', clearCache);

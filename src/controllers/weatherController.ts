@@ -170,11 +170,44 @@ export const getWeatherTypes = asyncHandler(async (_req: Request, res: Response)
  *       500:
  *         $ref: '#/components/responses/InternalServerError'
  */
-export const getCurrentForecast = asyncHandler(
-  async (_req: Request, res: Response): Promise<void> => {
-    logger.info('Fetching current forecast for all locations');
 
-    const enhanced = await ipmaService.getEnhancedCurrentForecast();
+export const getForecast = asyncHandler(async (req: Request, res: Response): Promise<void> => {
+  const locationId = req.query.location ? parseInt(req.query.location as string, 10) : null;
+  const day = parseInt(req.query.day as string) || 0;
+
+  if (day < 0 || day > 2) {
+    throw new AppError('Day parameter must be between 0 and 2', 400);
+  }
+
+  if (locationId !== null && (isNaN(locationId) || locationId <= 0)) {
+    throw new AppError('Location parameter must be a positive integer', 400);
+  }
+
+  if (locationId) {
+    // Get forecast for specific location
+    logger.info(`Fetching day ${day} forecast for location ${locationId}`);
+
+    const forecast = await ipmaService.getForecastByLocation(locationId, day);
+
+    if (!forecast) {
+      throw new AppError('Location not found', 404);
+    }
+
+    const enhanced = await ipmaService.getEnhancedForecastByDay(day);
+
+    const response: APIResponse<typeof forecast> = {
+      success: true,
+      metadata: enhanced.metadata,
+      data: forecast,
+      count: 1,
+    };
+
+    res.json(response);
+  } else {
+    // Get forecast for all locations
+    logger.info(`Fetching day ${day} forecast for all locations`);
+
+    const enhanced = await ipmaService.getEnhancedForecastByDay(day);
 
     const response: APIResponse<typeof enhanced.data> = {
       success: true,
@@ -185,69 +218,7 @@ export const getCurrentForecast = asyncHandler(
 
     res.json(response);
   }
-);
-
-/**
- * @swagger
- * /forecast/daily/{locationId}:
- *   get:
- *     summary: Get forecast for a specific location
- *     tags: [Forecasts]
- *     parameters:
- *       - in: path
- *         name: locationId
- *         required: true
- *         description: Global location identifier
- *         schema:
- *           type: integer
- *           minimum: 1
- *         example: 1010500
- *     responses:
- *       200:
- *         description: Forecast data for the specified location
- *         content:
- *           application/json:
- *             schema:
- *               allOf:
- *                 - $ref: '#/components/schemas/APIResponse'
- *                 - type: object
- *                   properties:
- *                     data:
- *                       $ref: '#/components/schemas/ForecastData'
- *                     count:
- *                       type: integer
- *                       example: 1
- *       400:
- *         $ref: '#/components/responses/BadRequest'
- *       404:
- *         $ref: '#/components/responses/NotFound'
- *       500:
- *         $ref: '#/components/responses/InternalServerError'
- */
-export const getForecastByLocation = asyncHandler(
-  async (req: Request, res: Response): Promise<void> => {
-    const locationId = parseInt(req.params.locationId, 10);
-
-    logger.info(`Fetching forecast for location ${locationId}`);
-
-    const forecast = await ipmaService.getForecastByLocation(locationId);
-
-    if (!forecast) {
-      throw new AppError('Location not found', 404);
-    }
-
-    const enhanced = await ipmaService.getEnhancedCurrentForecast();
-
-    const response: APIResponse<typeof forecast> = {
-      success: true,
-      metadata: enhanced.metadata,
-      data: forecast,
-      count: 1,
-    };
-
-    res.json(response);
-  }
-);
+});
 
 /**
  * @swagger
