@@ -4,7 +4,7 @@ import swaggerUi from 'swagger-ui-express';
 import { weatherRoutes } from './routes/weatherRoutes';
 import { errorHandler, notFoundHandler } from './middleware/errorHandler';
 import { logger } from './utils/logger';
-import { swaggerSpec } from './config/swaggerSimple';
+import { getSwaggerSpec } from './config/swaggerSimple';
 
 export const createApp = (): express.Application => {
   const app = express();
@@ -24,12 +24,20 @@ export const createApp = (): express.Application => {
   });
 
   // API Documentation
-  app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerSpec));
-  
+  app.use(
+    '/api-docs',
+    swaggerUi.serve,
+    (req: express.Request, res: express.Response, next: express.NextFunction) => {
+      const spec = getSwaggerSpec(req);
+      return swaggerUi.setup(spec)(req, res, next);
+    }
+  );
+
   // Swagger JSON endpoint
-  app.get('/api-docs.json', (_req, res) => {
+  app.get('/api-docs.json', (req: express.Request, res: express.Response) => {
+    const spec = getSwaggerSpec(req);
     res.setHeader('Content-Type', 'application/json');
-    res.send(swaggerSpec);
+    res.send(spec);
   });
 
   // Routes

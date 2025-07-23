@@ -1,10 +1,24 @@
+import { ENV } from './environment';
+import { Request } from 'express';
+
+// Function to get the base URL dynamically based on request or environment
+const getBaseUrl = (req?: Request): string => {
+  if (req && req.get) {
+    const host = req.get('host');
+    const protocol = req.protocol || 'http';
+    return `${protocol}://${host}`;
+  }
+  return `http://localhost:${ENV.PORT}`;
+};
+
 // Define the OpenAPI spec directly in TypeScript to avoid file system issues
-export const swaggerSpec = {
+export const getSwaggerSpec = (req?: Request): Record<string, unknown> => ({
   openapi: '3.0.0',
   info: {
     title: 'IPMA API Wrapper',
     version: '1.0.0',
-    description: 'A TypeScript Node.js API wrapper for the Portuguese Institute for Sea and Atmosphere (IPMA) open weather data',
+    description:
+      'A TypeScript Node.js API wrapper for the Portuguese Institute for Sea and Atmosphere (IPMA) open weather data',
     contact: {
       name: 'André Varandas',
       email: 'andre.m.varandas@gmail.com',
@@ -16,12 +30,12 @@ export const swaggerSpec = {
   },
   servers: [
     {
-      url: 'http://localhost:3000',
-      description: 'Development server',
+      url: getBaseUrl(req),
+      description: 'API server',
     },
     {
-      url: 'http://localhost:3000/api/v1',
-      description: 'Development server (v1 API)',
+      url: `${getBaseUrl(req)}/api/v1`,
+      description: 'API server (v1 API)',
     },
   ],
   tags: [
@@ -95,7 +109,10 @@ export const swaggerSpec = {
                     {
                       type: 'object',
                       properties: {
-                        data: { type: 'array', items: { $ref: '#/components/schemas/WeatherType' } },
+                        data: {
+                          type: 'array',
+                          items: { $ref: '#/components/schemas/WeatherType' },
+                        },
                       },
                     },
                   ],
@@ -122,7 +139,10 @@ export const swaggerSpec = {
                     {
                       type: 'object',
                       properties: {
-                        data: { type: 'array', items: { $ref: '#/components/schemas/ForecastData' } },
+                        data: {
+                          type: 'array',
+                          items: { $ref: '#/components/schemas/ForecastData' },
+                        },
                         count: { type: 'integer', example: 27 },
                         metadata: { $ref: '#/components/schemas/ForecastMetadata' },
                       },
@@ -151,7 +171,10 @@ export const swaggerSpec = {
                     {
                       type: 'object',
                       properties: {
-                        data: { type: 'array', items: { $ref: '#/components/schemas/ForecastData' } },
+                        data: {
+                          type: 'array',
+                          items: { $ref: '#/components/schemas/ForecastData' },
+                        },
                       },
                     },
                   ],
@@ -220,7 +243,9 @@ export const swaggerSpec = {
                       properties: {
                         data: {
                           type: 'object',
-                          properties: { message: { type: 'string', example: 'Cache cleared successfully' } },
+                          properties: {
+                            message: { type: 'string', example: 'Cache cleared successfully' },
+                          },
                         },
                       },
                     },
@@ -278,21 +303,41 @@ export const swaggerSpec = {
           local: { type: 'string', description: 'Location name' },
           dico: { type: 'string', description: 'District name', nullable: true },
         },
-        required: ['regionId', 'idWarning', 'idMunicipio', 'globalIdLocal', 'latitude', 'longitude', 'idDistrito', 'local'],
+        required: [
+          'regionId',
+          'idWarning',
+          'idMunicipio',
+          'globalIdLocal',
+          'latitude',
+          'longitude',
+          'idDistrito',
+          'local',
+        ],
       },
       WeatherType: {
         type: 'object',
         properties: {
           idWeatherType: { type: 'integer', description: 'Weather type identifier' },
-          descIdWeatherTypePT: { type: 'string', description: 'Weather type description in Portuguese' },
-          descIdWeatherTypeEN: { type: 'string', description: 'Weather type description in English' },
+          descIdWeatherTypePT: {
+            type: 'string',
+            description: 'Weather type description in Portuguese',
+          },
+          descIdWeatherTypeEN: {
+            type: 'string',
+            description: 'Weather type description in English',
+          },
         },
         required: ['idWeatherType', 'descIdWeatherTypePT', 'descIdWeatherTypeEN'],
       },
       ForecastData: {
         type: 'object',
         properties: {
-          precipitaProb: { type: 'integer', description: 'Precipitation probability (%)', minimum: 0, maximum: 100 },
+          precipitaProb: {
+            type: 'integer',
+            description: 'Precipitation probability (%)',
+            minimum: 0,
+            maximum: 100,
+          },
           tMin: { type: 'integer', description: 'Minimum temperature (°C)' },
           tMax: { type: 'integer', description: 'Maximum temperature (°C)' },
           predWindDir: { type: 'string', description: 'Predicted wind direction' },
@@ -304,7 +349,18 @@ export const swaggerSpec = {
           locationName: { type: 'string', description: 'Human-readable location name' },
           district: { type: 'string', description: 'District name', nullable: true },
         },
-        required: ['precipitaProb', 'tMin', 'tMax', 'predWindDir', 'idWeatherType', 'classWindSpeed', 'longitude', 'latitude', 'globalIdLocal', 'locationName'],
+        required: [
+          'precipitaProb',
+          'tMin',
+          'tMax',
+          'predWindDir',
+          'idWeatherType',
+          'classWindSpeed',
+          'longitude',
+          'latitude',
+          'globalIdLocal',
+          'locationName',
+        ],
         example: {
           precipitaProb: 10,
           tMin: 18,
@@ -323,7 +379,11 @@ export const swaggerSpec = {
         type: 'object',
         properties: {
           forecastDate: { type: 'string', format: 'date', description: 'Forecast date' },
-          dataUpdate: { type: 'string', format: 'date-time', description: 'When the data was last updated' },
+          dataUpdate: {
+            type: 'string',
+            format: 'date-time',
+            description: 'When the data was last updated',
+          },
           owner: { type: 'string', description: 'Data owner (IPMA)', example: 'IPMA' },
           country: { type: 'string', description: 'Country code (PT)', example: 'PT' },
         },
@@ -372,4 +432,7 @@ export const swaggerSpec = {
       },
     },
   },
-};
+});
+
+// Export the static version as well for backward compatibility
+export const swaggerSpec = getSwaggerSpec();
